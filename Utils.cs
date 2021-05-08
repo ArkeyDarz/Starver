@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Terraria;
+using Terraria.DataStructures;
 using Terraria.Localization;
 using TShockAPI;
 
@@ -13,7 +14,7 @@ namespace Starvers
 	public static class Utils
 	{
 		private static Random rand = new Random();
-		public static void SendCombatText(Vector2 pos, string text, Color color,int remoteClient = -1, int ignoreClient = -1)
+		public static void SendCombatText(Vector2 pos, string text, Color color, int remoteClient = -1, int ignoreClient = -1)
 		{
 			NetMessage.SendData((int)PacketTypes.CreateCombatTextExtended, remoteClient, ignoreClient, NetworkText.FromLiteral(text), (int)color.PackedValue, pos.X, pos.Y, 0.0f, 0, 0, 0);
 		}
@@ -27,16 +28,46 @@ namespace Starvers
 		{
 			SendCombatText(entity.Size, entity.position, text, color, remoteClient, ignoreClient);
 		}
-		public static int NewProj(Vector2 position, Vector2 velocity, int Type, int Damage, float KnockBack = 20f, int owner = 255, float ai0 = 0, float ai1 = 0, int extraUpdates = 0)
+		public static int NewProj(StarverPlayer player, Vector2 position, Vector2 velocity, int Type, int Damage, float KnockBack = 20f, int owner = 255, float ai0 = 0, float ai1 = 0, int extraUpdates = 0)
 		{
-			int index = Projectile.NewProjectile(position, velocity, Type, Damage, KnockBack, owner, ai0, ai1);
+			var source = player.TPlayer.GetProjectileSource_Item(player.HeldItem);
+			int index = Projectile.NewProjectile(source, position, velocity, Type, Damage, KnockBack, owner, ai0, ai1);
 			Main.projectile[index].extraUpdates = extraUpdates;
 			TSPlayer.All.SendData(PacketTypes.ProjectileNew, "", index);
 			return index;
 		}
+		public static int NewProj(NPC npc, Vector2 position, Vector2 velocity, int Type, int Damage, float KnockBack = 20f, int owner = 255, float ai0 = 0, float ai1 = 0, int extraUpdates = 0)
+		{
+			var source = npc.GetProjectileSpawnSource();
+			int index = Projectile.NewProjectile(source,position, velocity, Type, Damage, KnockBack, owner, ai0, ai1);
+			Main.projectile[index].extraUpdates = extraUpdates;
+			TSPlayer.All.SendData(PacketTypes.ProjectileNew, "", index);
+			return index;
+		}
+		public static int NewProj(Vector2 position, Vector2 velocity, int Type, int Damage, float KnockBack = 20f, int owner = 255, float ai0 = 0, float ai1 = 0, int extraUpdates = 0)
+		{
+			var source = Main.LocalPlayer.GetProjectileSource_Item(Main.LocalPlayer.HeldItem);
+			int index = Projectile.NewProjectile(source, position, velocity, Type, Damage, KnockBack, owner, ai0, ai1);
+			Main.projectile[index].extraUpdates = extraUpdates;
+			TSPlayer.All.SendData(PacketTypes.ProjectileNew, "", index);
+			return index;
+		}
+		public static int NewProjNoBC(NPC npc, Vector2 position, Vector2 velocity, int Type, int Damage, float KnockBack = 20f, int owner = 255, float ai0 = 0, float ai1 = 0)
+		{
+			var source = npc.GetProjectileSpawnSource();
+			int index = Projectile.NewProjectile(source, position, velocity, Type, Damage, KnockBack, owner, ai0, ai1);
+			return index;
+		}
+		public static int NewProjNoBC(StarverPlayer player, Vector2 position, Vector2 velocity, int Type, int Damage, float KnockBack = 20f, int owner = 255, float ai0 = 0, float ai1 = 0)
+		{
+			var source = player.TPlayer.GetProjectileSource_Item(player.HeldItem);
+			int index = Projectile.NewProjectile(source,position, velocity, Type, Damage, KnockBack, owner, ai0, ai1);
+			return index;
+		}
 		public static int NewProjNoBC(Vector2 position, Vector2 velocity, int Type, int Damage, float KnockBack = 20f, int owner = 255, float ai0 = 0, float ai1 = 0)
 		{
-			int index = Projectile.NewProjectile(position, velocity, Type, Damage, KnockBack, owner, ai0, ai1);
+			var source = Main.LocalPlayer.GetProjectileSource_Item(Main.LocalPlayer.HeldItem);
+			int index = Projectile.NewProjectile(source, position, velocity, Type, Damage, KnockBack, owner, ai0, ai1);
 			return index;
 		}
 		public static int FindEmptyNPCSlot(int begin)
@@ -159,9 +190,11 @@ namespace Starvers
 		}
 		public static void SendData(this Projectile proj)
 		{
+			var value = proj.netImportant;
 			proj.netImportant = true;
 			NetMessage.SendData((int)PacketTypes.ProjectileNew, -1, -1, null, proj.whoAmI);
 			proj.netImportant = false;
+			proj.netImportant = value;
 		}
 		public static void SendData(this Player player)
 		{

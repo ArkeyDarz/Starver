@@ -457,7 +457,16 @@ namespace Starvers
 			}
 			for (int i = 0; i < ItemBoosts.Count; i++)
 			{
-
+				if (ItemBoosts[i].Type == item.type)
+				{
+					var boost = ItemBoosts[i].GetItemBoost();
+					if (boost.CanUseItem(this))
+					{
+						boost.UseItem(this);
+						boost.ControlUseItem(this);
+					}
+					break;
+				}
 			}
 		}
 		public virtual void OnNewProj(GetDataHandlers.NewProjectileEventArgs args)
@@ -478,6 +487,18 @@ namespace Starvers
 						skill.Release(this, vel);
 						skillCheckDelay += 20;
 					}
+				}
+			}
+			for (int i = 0; i < ItemBoosts.Count; i++)
+			{
+				if (ItemBoosts[i].Type > 10000 && ItemBoosts[i].Type == args.Type + 10000)
+				{
+					var boost = ItemBoosts[i].GetItemBoost();
+					if (boost.CanUseItem(this))
+					{
+						boost.UseItem(this);
+					}
+					break;
 				}
 			}
 		}
@@ -519,12 +540,22 @@ namespace Starvers
 				boss.Strike(this, args.Damage, args.KnockBack, args.HitDirection, args.Critical);
 				return;
 			}
+			var sNpc = Starver.Instance.NPCs[args.Npc.whoAmI];
+			if (sNpc != null && sNpc.Active)
+			{
+				sNpc.Strike(this, args.Damage, args.KnockBack, args.HitDirection, args.Critical);
+				return;
+			}
 			#region Normal
 			var raw = args.Damage;
 			var index = Math.Sqrt(Math.Sqrt(MP / 200.0)) * 1.2;
 
 			args.Damage = (int)Math.Max(raw, args.Damage * DamageIndex * index);
 			var realdamage = (int)Main.CalculateDamageNPCsTake(args.Damage, args.Npc.defense);
+			if (args.Npc.dontTakeDamage)
+			{
+				realdamage = 0;
+			}
 			args.Npc.SendCombatText(realdamage.ToString(), Starver.DamageColor);
 			var realNPC = args.Npc.realLife > 0 ? Main.npc[args.Npc.realLife] : args.Npc;
 			var expGet = Math.Min(realdamage, realNPC.life);
@@ -865,21 +896,21 @@ MP({MP}/{MPMax})
 		/// </summary>
 		public int NewProjNoBC(Vector2 position, Vector2 velocity, int Type, int Damage, float KnockBack = 20f, float ai0 = 0, float ai1 = 0)
 		{
-			return Utils.NewProjNoBC(position, velocity, Type, Damage, KnockBack, Index, ai0, ai1);
+			return Utils.NewProjNoBC(this, position, velocity, Type, Damage, KnockBack, Index, ai0, ai1);
 		}
 		/// <summary>
 		/// 生成弹幕
 		/// </summary>
 		public int NewProj(Vector2 position, Vector2 velocity, int Type, int Damage, float KnockBack = 20f, float ai0 = 0, float ai1 = 0, int extraUpdates = 0)
 		{
-			return Utils.NewProj(position, velocity, Type, Damage, KnockBack, Index, ai0, ai1, extraUpdates);
+			return Utils.NewProj(this, position, velocity, Type, Damage, KnockBack, Index, ai0, ai1, extraUpdates);
 		}
 		/// <summary>
 		/// 生成弹幕
 		/// </summary>
 		public int NewProj(Vector2 velocity, int Type, int Damage, float KnockBack = 20f, float ai0 = 0, float ai1 = 0, int extraUpdates = 0)
 		{
-			return Utils.NewProj(Center, velocity, Type, Damage, KnockBack, Index, ai0, ai1, extraUpdates);
+			return Utils.NewProj(this, Center, velocity, Type, Damage, KnockBack, Index, ai0, ai1, extraUpdates);
 		}
 		#endregion
 		#region ProjCircle

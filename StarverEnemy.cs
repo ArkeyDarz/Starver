@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Terraria;
+using Terraria.DataStructures;
 using Terraria.ID;
 
 namespace Starvers
@@ -74,13 +75,17 @@ namespace Starvers
 		
 		#region Projs
 		#region Bases
+		public IProjectileSource GetProjSource()
+		{
+			return TNPC.GetProjectileSpawnSource();
+		}
 		public int NewProj(Vector2 velocity, int projID, int damage, float knockBack = 1, float ai0 = 0, float ai1 = 0)
 		{
 			return NewProj(Center, velocity, projID, damage, knockBack, ai0, ai1);
 		}
 		public int NewProj(Vector2 position, Vector2 velocity, int projID, int damage, float knockBack = 1, float ai0 = 0, float ai1 = 0)
 		{
-			return Utils.NewProj(position, velocity, projID, damage, knockBack, Main.myPlayer, ai0, ai1);
+			return Utils.NewProj(TNPC, position, velocity, projID, damage, knockBack, Main.myPlayer, ai0, ai1);
 		}
 		public int NewProjNoBC(Vector2 velocity, int projID, int damage, float knockBack = 1, float ai0 = 0, float ai1 = 0)
 		{
@@ -88,7 +93,7 @@ namespace Starvers
 		}
 		public int NewProjNoBC(Vector2 position, Vector2 velocity, int projID, int damage, float knockBack = 1, float ai0 = 0, float ai1 = 0)
 		{
-			return Utils.NewProjNoBC(position, velocity, projID, damage, knockBack, Main.myPlayer, ai0, ai1);
+			return Utils.NewProjNoBC(TNPC ,position, velocity, projID, damage, knockBack, Main.myPlayer, ai0, ai1);
 		}
 		#endregion
 		#region ProjCircle
@@ -242,7 +247,7 @@ namespace Starvers
 		{
 			int[] arr = new int[num];
 			Vector2 average = End - Begin;
-			average /= num;
+			average /= num - 1;
 			for (int i = 0; i < num; i++)
 			{
 				arr[i] = NewProj(Begin + average * i, Vel, type, Damage, 3f, ai0, ai1);
@@ -321,7 +326,7 @@ namespace Starvers
 			realNPC.life -= damage;
 			if (realNPC.life <= 0)
 			{
-				realNPC.checkDead();
+				Kill();
 			}
 		}
 		#endregion
